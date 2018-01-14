@@ -1,5 +1,5 @@
-//#define MICROPY_HW_BOARD_NAME       "HelTec"
-//#define MICROPY_HW_MCU_NAME         "LORA"
+#define MICROPY_HW_BOARD_NAME       "HelTec"
+#define MICROPY_HW_MCU_NAME         "LORA"
 
 // SPI busses
 #define MICROPY_HW_SPI1_NSS     (18)

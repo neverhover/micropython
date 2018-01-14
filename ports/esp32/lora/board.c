@@ -29,9 +29,12 @@ void BoardInitMcu( void )
 {
     if( McuInitialized == false )
     {
-        SpiInit( &SX1276.Spi, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, NC );
+        printf("Spi init\n");
+        SpiInit( &SX1276.Spi, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, RADIO_NSS );
+        printf("SX1276IoInit\n");
         SX1276IoInit( );
         TimerHwInit();
+        printf("Lora version is 0x%x\n",SX1276Read(0x42));
         McuInitialized = true;
     }
 }

@@ -42,8 +42,8 @@ APP_LORA_LIB_SRC += $(addprefix $(TOP)/lib/lora/, \
 	system/delay.c \
 	system/gpio.c \
 	system/timer.c \
-	system/crypto/aes.c \
-	system/crypto/cmac.c \
+	system/lora_crypto/aes.c \
+	system/lora_crypto/cmac.c \
 	)
 endif
 

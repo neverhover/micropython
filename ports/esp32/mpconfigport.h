@@ -244,8 +244,12 @@ typedef long mp_off_t;
 #include <sys/types.h>
 
 // board specifics
-
-#define MICROPY_HW_BOARD_NAME "ESP32 module"
-#define MICROPY_HW_MCU_NAME "ESP32"
-#define MICROPY_PY_SYS_PLATFORM "esp32"
 #include "mpconfigboard.h"
+#ifndef MICROPY_HW_BOARD_NAME
+#define MICROPY_HW_BOARD_NAME "ESP32 module"
+#endif
+#ifndef MICROPY_HW_MCU_NAME
+#define MICROPY_HW_MCU_NAME "ESP32"
+#endif
+#define MICROPY_PY_SYS_PLATFORM "esp32"
+

@@ -46,7 +46,11 @@ void SpiInit( Spi_t *obj, PinNames mosi, PinNames miso, PinNames sclk, PinNames 
     obj->delay_half = baudrate_to_delay_half(10000000);
     obj->polarity = 0;
     obj->phase = 0;
-
+    printf("Lora spi: miso:%d mosi:%d clk:%d nss:%d delay_half:%d\n", 
+        miso, mosi, sclk, nss, obj->delay_half);
+    GpioInit( &obj->Mosi, mosi, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 0 );
+    GpioInit( &obj->Miso, miso, PIN_INPUT, PIN_PUSH_PULL, PIN_PULL_UP, 0 );
+    GpioInit( &obj->Sclk, sclk, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 0 );
     // configure pins
     GpioMcuWrite(&obj->Sclk, obj->polarity);
     // mp_hal_pin_output(self->sck);
@@ -87,7 +91,7 @@ void SpiFrequency( Spi_t *obj, uint32_t hz ) {
 uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
 {
     uint32_t delay_half = obj->delay_half;
-    GpioMcuWrite(&obj->Nss, 0);
+    
     
     uint8_t data_out = outData & 0xff;
     uint8_t data_in = 0;
@@ -110,7 +114,7 @@ uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
         }
     }
 
-    GpioMcuWrite(&obj->Nss, 1);
+    
     if (outData == 0) {
         return data_in;
     }
