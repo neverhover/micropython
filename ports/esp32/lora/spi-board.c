@@ -14,160 +14,107 @@ Maintainer: Miguel Luis and Gregory Cristian
 */
 #include "board.h"
 #include "spi-board.h"
-#include "stm32f4xx_hal_spi.h"
-
+#include "gpio-board.h"
+#include "driver/spi_master.h"
 /*!
  * MCU SPI peripherals enumeration
  */
-typedef enum
-{
-    SPI_1 = ( uint32_t )SPI1_BASE,
-    SPI_2 = ( uint32_t )SPI2_BASE,
-}SPIName;
+
+static uint32_t baudrate_to_delay_half(uint32_t baudrate) {
+    #ifdef MICROPY_PY_MACHINE_SPI_MIN_DELAY
+    if (baudrate >= MICROPY_PY_MACHINE_SPI_MAX_BAUDRATE) {
+        return MICROPY_PY_MACHINE_SPI_MIN_DELAY;
+    } else
+    #endif
+    {
+        uint32_t delay_half = 500000 / baudrate;
+        // round delay_half up so that: actual_baudrate <= requested_baudrate
+        if (500000 % baudrate != 0) {
+            delay_half += 1;
+        }
+        return delay_half;
+    }
+}
 
 void SpiInit( Spi_t *obj, PinNames mosi, PinNames miso, PinNames sclk, PinNames nss )
 {
-    BoardDisableIrq( );
+    // // assign the pins
+    obj->Miso.port = miso;
+    obj->Mosi.port = mosi;
+    obj->Sclk.port = sclk;
+    obj->Nss.port = nss;
+    obj->delay_half = baudrate_to_delay_half(10000000);
+    obj->polarity = 0;
+    obj->phase = 0;
 
-    // Choose SPI interface according to the given pins
-    if( mosi == PA_7 )
-    {
-        __HAL_RCC_SPI1_FORCE_RESET( );
-        __HAL_RCC_SPI1_RELEASE_RESET( );
+    // configure pins
+    GpioMcuWrite(&obj->Sclk, obj->polarity);
+    // mp_hal_pin_output(self->sck);
+    gpio_pad_select_gpio(obj->Sclk.port);
+    gpio_set_direction(obj->Sclk.port, GPIO_MODE_INPUT_OUTPUT);
+    
+    // mp_hal_pin_output(self->mosi);
+    gpio_pad_select_gpio(obj->Mosi.port);
+    gpio_set_direction(obj->Mosi.port, GPIO_MODE_INPUT_OUTPUT);
+    // mp_hal_pin_input(self->miso);
+    gpio_pad_select_gpio(obj->Miso.port);
+    gpio_set_direction(obj->Miso.port, GPIO_MODE_INPUT);
+    // configure nss
 
-        __HAL_RCC_SPI1_CLK_ENABLE( );
 
-        obj->Spi.Instance = ( SPI_TypeDef* )SPI1_BASE;
-
-        GpioInit( &obj->Mosi, mosi, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI1 );
-        GpioInit( &obj->Miso, miso, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI1 );
-        GpioInit( &obj->Sclk, sclk, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI1 );
-        GpioInit( &obj->Nss, nss, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_UP, GPIO_AF5_SPI1 );
-
-        if( nss == NC )
-        {
-            obj->Spi.Init.NSS = SPI_NSS_SOFT;
-            SpiFormat( obj, SPI_DATASIZE_8BIT, SPI_POLARITY_LOW, SPI_PHASE_1EDGE, 0 );
-        }
-        else
-        {
-            SpiFormat( obj, SPI_DATASIZE_8BIT, SPI_POLARITY_LOW, SPI_PHASE_1EDGE, 1 );
-        }
-    }
-    else if( mosi == PB_15 )
-    {
-        __HAL_RCC_SPI2_FORCE_RESET( );
-        __HAL_RCC_SPI2_RELEASE_RESET( );
-
-        __HAL_RCC_SPI2_CLK_ENABLE( );
-
-        obj->Spi.Instance = ( SPI_TypeDef* )SPI2_BASE;
-
-        GpioInit( &obj->Mosi, mosi, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI2 );
-        GpioInit( &obj->Miso, miso, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI2 );
-        GpioInit( &obj->Sclk, sclk, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_DOWN, GPIO_AF5_SPI2 );
-        GpioInit( &obj->Nss, nss, PIN_ALTERNATE_FCT, PIN_PUSH_PULL, PIN_PULL_UP, GPIO_AF5_SPI2 );
-
-        if( nss == NC )
-        {
-            obj->Spi.Init.NSS = SPI_NSS_SOFT;
-            SpiFormat( obj, SPI_DATASIZE_8BIT, SPI_POLARITY_LOW, SPI_PHASE_1EDGE, 0 );
-        }
-        else
-        {
-            SpiFormat( obj, SPI_DATASIZE_8BIT, SPI_POLARITY_LOW, SPI_PHASE_1EDGE, 1 );
-        }
-    }
-    SpiFrequency( obj, 10000000 );
-
-    HAL_SPI_Init( &obj->Spi );
-
-    BoardEnableIrq( );
 }
 
 void SpiDeInit( Spi_t *obj )
 {
-    HAL_SPI_DeInit( &obj->Spi );
-
-    GpioInit( &obj->Mosi, obj->Mosi.pin, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
-    GpioInit( &obj->Miso, obj->Miso.pin, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_DOWN, 0 );
-    GpioInit( &obj->Sclk, obj->Sclk.pin, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
-    GpioInit( &obj->Nss, obj->Nss.pin, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
+    // disable the peripheral
 }
 
 void SpiFormat( Spi_t *obj, int8_t bits, int8_t cpol, int8_t cpha, int8_t slave )
 {
-    obj->Spi.Init.Direction = SPI_DIRECTION_2LINES;
-    if( bits == SPI_DATASIZE_8BIT )
-    {
-        obj->Spi.Init.DataSize = SPI_DATASIZE_8BIT;
-    }
-    else
-    {
-        obj->Spi.Init.DataSize = SPI_DATASIZE_16BIT;
-    }
-    obj->Spi.Init.CLKPolarity = cpol;
-    obj->Spi.Init.CLKPhase = cpha;
-    obj->Spi.Init.FirstBit = SPI_FIRSTBIT_MSB;
-    obj->Spi.Init.TIMode = SPI_TIMODE_DISABLE;
-    obj->Spi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    obj->Spi.Init.CRCPolynomial = 7;
-
-    if( slave == 0 )
-    {
-        obj->Spi.Init.Mode = SPI_MODE_MASTER;
-    }
-    else
-    {
-        obj->Spi.Init.Mode = SPI_MODE_SLAVE;
-    }
+    // configure the interface (only master mode supported)
 }
 
-void SpiFrequency( Spi_t *obj, uint32_t hz )
-{
-    uint32_t divisor = 0;
-    uint32_t sysClkTmp = SystemCoreClock;
-    uint32_t baudRate;
-
-    while( sysClkTmp > hz )
-    {
-        divisor++;
-        sysClkTmp = ( sysClkTmp >> 1 );
-
-        if( divisor >= 7 )
-        {
-            break;
-        }
-    }
-
-    baudRate =( ( ( divisor & 0x4 ) == 0 ) ? 0x0 : SPI_CR1_BR_2 ) |
-              ( ( ( divisor & 0x2 ) == 0 ) ? 0x0 : SPI_CR1_BR_1 ) |
-              ( ( ( divisor & 0x1 ) == 0 ) ? 0x0 : SPI_CR1_BR_0 );
-
-    obj->Spi.Init.BaudRatePrescaler = baudRate;
+/*!
+ * \brief Sets the SPI speed
+ *
+ * \param [IN] obj SPI object
+ * \param [IN] hz  SPI clock frequency in hz
+ */
+void SpiFrequency( Spi_t *obj, uint32_t hz ) {
+    // configure the interface (only master mode supported)
 }
 
 uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
 {
-    uint8_t rxData = 0;
-
-    if( ( obj == NULL ) || ( obj->Spi.Instance ) == NULL )
-    {
-        assert_param( FAIL );
+    uint32_t delay_half = obj->delay_half;
+    GpioMcuWrite(&obj->Nss, 0);
+    
+    uint8_t data_out = outData & 0xff;
+    uint8_t data_in = 0;
+    for (int j = 0; j < 8; ++j, data_out <<= 1) {
+        GpioMcuWrite(&obj->Mosi, (data_out >> 7) & 1);
+        if (obj->phase == 0) {
+            ets_delay_us(delay_half);
+            GpioMcuWrite(&obj->Sclk, 1 - obj->polarity);
+        } else {
+            GpioMcuWrite(&obj->Sclk, 1 - obj->polarity);
+            ets_delay_us(delay_half);
+        }
+        data_in = (data_in << 1) | GpioMcuRead(&obj->Miso);
+        if (obj->phase == 0) {
+            ets_delay_us(delay_half);
+            GpioMcuWrite(&obj->Sclk, obj->polarity);
+        } else {
+            GpioMcuWrite(&obj->Sclk, obj->polarity);
+            ets_delay_us(delay_half);
+        }
     }
 
-    __HAL_SPI_ENABLE( &obj->Spi );
+    GpioMcuWrite(&obj->Nss, 1);
+    if (outData == 0) {
+        return data_in;
+    }
 
-    BoardDisableIrq( );
-
-    while( __HAL_SPI_GET_FLAG( &obj->Spi, SPI_FLAG_TXE ) == RESET );
-    obj->Spi.Instance->DR = ( uint16_t ) ( outData & 0xFF );
-
-    while( __HAL_SPI_GET_FLAG( &obj->Spi, SPI_FLAG_RXNE ) == RESET );
-    rxData = ( uint16_t ) obj->Spi.Instance->DR;
-
-    BoardEnableIrq( );
-
-    return( rxData );
+    return 0;
 }
 

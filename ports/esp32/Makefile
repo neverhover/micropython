@@ -56,8 +56,7 @@ INC += -I$(TOP)
 INC += -I$(TOP)/lib/mp-readline
 INC += -I$(TOP)/lib/netutils
 INC += -I$(TOP)/lib/timeutils
-INC += -I$(BUILD)
-INC += $(APP_INC)
+INC += -I$(BUILD) $(APP_INC)
 
 INC_ESPCOMP += -I$(ESPCOMP)/bootloader_support/include
 INC_ESPCOMP += -I$(ESPCOMP)/driver/include

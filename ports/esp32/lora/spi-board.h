@@ -20,7 +20,9 @@ Maintainer: Miguel Luis and Gregory Cristian
  */
 struct Spi_s
 {
-    SPI_HandleTypeDef Spi;
+    uint32_t delay_half; // microsecond delay for half SCK period
+    uint8_t polarity;
+    uint8_t phase;
     Gpio_t Mosi;
     Gpio_t Miso;
     Gpio_t Sclk;
