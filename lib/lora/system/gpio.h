@@ -19,8 +19,8 @@ Maintainer: Miguel Luis and Gregory Cristian
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
+#include "driver/gpio.h"
 #include "pinName-board.h"
-#include "pinName-ioe.h"
 
 /*!
  * Board GPIO pin names
@@ -28,7 +28,6 @@ Maintainer: Miguel Luis and Gregory Cristian
 typedef enum
 {
     MCU_PINS,
-    IOE_PINS,
 
     // Not connected
     NC = (int)0xFFFFFFFF
@@ -39,10 +38,8 @@ typedef enum
  */
 typedef enum
 {
-    PIN_INPUT = 0,
-    PIN_OUTPUT,
-    PIN_ALTERNATE_FCT,
-    PIN_ANALOGIC
+    PIN_INPUT = GPIO_MODE_INPUT,
+    PIN_OUTPUT = GPIO_MODE_OUTPUT
 }PinModes;
 
 /*!
@@ -51,8 +48,8 @@ typedef enum
 typedef enum
 {
     PIN_NO_PULL = 0,
-    PIN_PULL_UP,
-    PIN_PULL_DOWN
+    PIN_PULL_UP = 1,
+    PIN_PULL_DOWN = 2
 }PinTypes;
 
 /*!
@@ -69,10 +66,10 @@ typedef enum
  */
 typedef enum
 {
-    NO_IRQ = 0,
-    IRQ_RISING_EDGE,
-    IRQ_FALLING_EDGE,
-    IRQ_RISING_FALLING_EDGE
+    NO_IRQ = 0xFF,
+    IRQ_RISING_EDGE = GPIO_INTR_POSEDGE,
+    IRQ_FALLING_EDGE = GPIO_INTR_NEGEDGE,
+    IRQ_RISING_FALLING_EDGE = GPIO_INTR_ANYEDGE
 }IrqModes;
 
 /*!
@@ -92,22 +89,13 @@ typedef enum
  */
 typedef struct
 {
-    PinNames  pin;
-    uint16_t pinIndex;
-    void *port;
-    uint16_t portIndex;
-    PinTypes pull;
-}Gpio_t;
+    gpio_num_t port;
+} Gpio_t;
 
 /*!
  * GPIO IRQ handler function prototype
  */
 typedef void( GpioIrqHandler )( void );
-
-/*!
- * GPIO Expander IRQ handler function prototype
- */
-typedef void( GpioIoeIrqHandler )( void );
 
 /*!
  * \brief Initializes the given GPIO object

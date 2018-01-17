@@ -13,13 +13,8 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 Maintainer: Miguel Luis and Gregory Cristian
 */
 #include "board.h"
-#include "rtc-board.h"
+#include "timer-board.h"
 
-#ifdef DEBUG_TIMER
-#define DEBUG(format, ...) printf (format, ##__VA_ARGS__)
-#else
-#define DEBUG(format, ...)
-#endif
 /*!
  * This flag is used to loop through the main several times in order to be sure
  * that all pending events have been processed.
@@ -86,23 +81,19 @@ void TimerInit( TimerEvent_t *obj, void ( *callback )( void ) )
 
 void TimerStart( TimerEvent_t *obj )
 {
-    DEBUG("[Func] -------> TimerStart calling start\r\n");
     uint32_t elapsedTime = 0;
     uint32_t remainingTime = 0;
 
-    BoardDisableIrq( );
+    uint32_t ilevel = MICROPY_BEGIN_ATOMIC_SECTION();
 
     if( ( obj == NULL ) || ( TimerExists( obj ) == true ) )
     {
-        BoardEnableIrq( );
+        MICROPY_END_ATOMIC_SECTION(ilevel);
         return;
     }
 
     obj->Timestamp = obj->ReloadValue;
     obj->IsRunning = false;
-    DEBUG("[Func] TimerListHead is null? --> %d, timestamp:%d running: curObj=%d, headObj=%d\r\n",
-        TimerListHead == NULL,
-        obj->Timestamp, obj->IsRunning, TimerListHead->IsRunning);
 
     if( TimerListHead == NULL )
     {
@@ -133,8 +124,7 @@ void TimerStart( TimerEvent_t *obj )
              TimerInsertTimer( obj, remainingTime );
         }
     }
-    BoardEnableIrq( );
-    DEBUG("[Func] -------> TimerStart calling done\r\n");
+    MICROPY_END_ATOMIC_SECTION(ilevel);
 }
 
 static void TimerInsertTimer( TimerEvent_t *obj, uint32_t remainingTime )
@@ -144,8 +134,7 @@ static void TimerInsertTimer( TimerEvent_t *obj, uint32_t remainingTime )
 
     TimerEvent_t* prev = TimerListHead;
     TimerEvent_t* cur = TimerListHead->Next;
-    DEBUG("[TIMER] TimerInsertTimer cur==NULL? %d cur->Timestamp:%d obj->Timestamp=%d param::remainingTime:%d\r\n",
-        cur==NULL, cur==NULL? -1000: cur->Timestamp, obj->Timestamp, remainingTime);
+
     if( cur == NULL )
     { // obj comes just after the head
         obj->Timestamp -= remainingTime;
@@ -190,16 +179,12 @@ static void TimerInsertTimer( TimerEvent_t *obj, uint32_t remainingTime )
             }
         }
     }
-    DEBUG("[TIMER] TimerInsertTimer cur==NULL? %d cur->Timestamp:%d obj->Timestamp=%d param::remainingTime:%d\r\n",
-            cur==NULL, cur==NULL? -1000: cur->Timestamp, obj->Timestamp, remainingTime);
 }
 
 static void TimerInsertNewHeadTimer( TimerEvent_t *obj, uint32_t remainingTime )
 {
-
     TimerEvent_t* cur = TimerListHead;
-    DEBUG("[Timer] TimerInsertNewHeadTimer cur != NULL -> %d, remainingTime:%d obj->Timestamp:%d\r\n",
-        cur != NULL, remainingTime,obj->Timestamp );
+
     if( cur != NULL )
     {
         cur->Timestamp = remainingTime - obj->Timestamp;
@@ -214,19 +199,16 @@ static void TimerInsertNewHeadTimer( TimerEvent_t *obj, uint32_t remainingTime )
 
 void TimerIrqHandler( void )
 {
-    DEBUG("RTC Alarm IRQ Handler...\r\n");
     uint32_t elapsedTime = 0;
 
     // Early out when TimerListHead is null to prevent null pointer
     if ( TimerListHead == NULL )
     {
-        DEBUG("TimerListHead is null\r\n");
         return;
     }
 
     elapsedTime = TimerGetValue( );
-    DEBUG("[Timer] timer is null? --> %d ,elapsedTime = %d, TimerListHead->Timestamp = %d\r\n", TimerListHead == NULL,
-        elapsedTime, TimerListHead->Timestamp);
+
     if( elapsedTime >= TimerListHead->Timestamp )
     {
         TimerListHead->Timestamp = 0;
@@ -242,21 +224,18 @@ void TimerIrqHandler( void )
     {
         TimerEvent_t* elapsedTimer = TimerListHead;
         TimerListHead = TimerListHead->Next;
-        DEBUG("TimerListHead calling\r\n");
+
         if( elapsedTimer->Callback != NULL )
         {
-            DEBUG("elapsedTimer->Callback calling\r\n");
             elapsedTimer->Callback( );
         }
     }
-    DEBUG("start the next TimerListHead if it exists\r\n");
+
     // start the next TimerListHead if it exists
     if( TimerListHead != NULL )
     {
-        DEBUG("start the next TimerListHead yes, it exists\r\n");
         if( TimerListHead->IsRunning != true )
         {
-            DEBUG("start the next TimerListHead yes but not running so try to run it\r\n");
             TimerListHead->IsRunning = true;
             TimerSetTimeout( TimerListHead );
         }
@@ -265,8 +244,7 @@ void TimerIrqHandler( void )
 
 void TimerStop( TimerEvent_t *obj )
 {
-    DEBUG("[Timer] TimerStop obj\r\n");
-    BoardDisableIrq( );
+    uint32_t ilevel = MICROPY_BEGIN_ATOMIC_SECTION();
 
     uint32_t elapsedTime = 0;
     uint32_t remainingTime = 0;
@@ -277,7 +255,7 @@ void TimerStop( TimerEvent_t *obj )
     // List is empty or the Obj to stop does not exist
     if( ( TimerListHead == NULL ) || ( obj == NULL ) )
     {
-        BoardEnableIrq( );
+        MICROPY_END_ATOMIC_SECTION(ilevel);
         return;
     }
 
@@ -348,7 +326,7 @@ void TimerStop( TimerEvent_t *obj )
             }
         }
     }
-    BoardEnableIrq( );
+    MICROPY_END_ATOMIC_SECTION(ilevel);
 }
 
 static bool TimerExists( TimerEvent_t *obj )
@@ -381,30 +359,23 @@ void TimerSetValue( TimerEvent_t *obj, uint32_t value )
 
 TimerTime_t TimerGetValue( void )
 {
-    return RtcGetElapsedAlarmTime( );
+    return TimerHwGetElapsedTime( );
 }
 
-TimerTime_t TimerGetCurrentTime( void )
+IRAM_ATTR TimerTime_t TimerGetCurrentTime( void )
 {
-    return RtcGetTimerValue( );
+    return TimerHwGetTime( );
 }
 
-TimerTime_t TimerGetElapsedTime( TimerTime_t savedTime )
+static IRAM_ATTR void TimerSetTimeout( TimerEvent_t *obj )
 {
-    return RtcComputeElapsedTime( savedTime );
-}
-
-TimerTime_t TimerGetFutureTime( TimerTime_t eventInFuture )
-{
-    return RtcComputeFutureEventTime( eventInFuture );
-}
-
-static void TimerSetTimeout( TimerEvent_t *obj )
-{
-    DEBUG("[Func]TimerSetTimeout be called, obj->Timestamp:%d\r\n", obj->Timestamp);
     HasLoopedThroughMain = 0;
-    obj->Timestamp = RtcGetAdjustedTimeoutValue( obj->Timestamp );
-    RtcSetTimeout( obj->Timestamp );
+    TimerHwStart( obj->Timestamp );
+}
+
+IRAM_ATTR TimerTime_t TimerGetElapsedTime( TimerTime_t savedTime )
+{
+    return TimerHwComputeTimeDifference( savedTime );
 }
 
 void TimerLowPowerHandler( void )
@@ -418,10 +389,7 @@ void TimerLowPowerHandler( void )
         else
         {
             HasLoopedThroughMain = 0;
-            if( GetBoardPowerSource( ) == BATTERY_POWER )
-            {
-                RtcEnterLowPowerStopMode( );
-            }
+            TimerHwEnterLowPowerStopMode( );
         }
     }
 }

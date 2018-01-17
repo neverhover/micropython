@@ -48,7 +48,8 @@
 #include "uart.h"
 #include "modmachine.h"
 #include "mpthreadport.h"
-#include "board.h"
+#include "modlora.h"
+
 // MicroPython runs as a task under FreeRTOS
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
 #define MP_TASK_STACK_SIZE      (16 * 1024)
@@ -87,10 +88,10 @@ soft_reset:
     if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
         pyexec_file("main.py");
     }
-    // added by blood
-    printf("Start to init mcu\n");
-    BoardInitMcu();
-    printf("Ready to loop mcu\n");
+
+#if defined(LORA_RADIO_SX1278)
+    modlora_init0();
+#endif
     for (;;) {
         if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
             if (pyexec_raw_repl() != 0) {

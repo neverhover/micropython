@@ -1,3 +1,5 @@
+
+
 #define MICROPY_HW_BOARD_NAME       "HelTec"
 #define MICROPY_HW_MCU_NAME         "LORA"
 
@@ -15,4 +17,6 @@
 #define MICROPY_HW_LORA_DIO5    (-1)
 
 //Normal GPIO
-#define MICROPY_HW_GPIO_LED (25)
+#define MICROPY_HW_GPIO_LED     (25)
+
+#define LORA_RADIO_SX1278

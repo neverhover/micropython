@@ -24,13 +24,6 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include "LoRaMacCrypto.h"
 #include "LoRaMacTest.h"
 
-#define DEBUG_LORAMAC
-#ifdef DEBUG_LORAMAC
-#define DEBUG(format, ...) printf (format, ##__VA_ARGS__)
-#else
-#define DEBUG(format, ...)
-#endif
-
 /*!
  * Maximum PHY layer payload size
  */
@@ -612,7 +605,7 @@ static void OnRadioTxDone( void )
     PhyParam_t phyParam;
     SetBandTxDoneParams_t txDone;
     TimerTime_t curTime = TimerGetCurrentTime( );
-    printf("[LoRaMac.c] OnRadioTxDone curTime:%u\r\n", curTime);
+    // //printf("[LoRaMac.c] OnRadioTxDone curTime:%u\r\n", curTime);
 
     if( LoRaMacDeviceClass != CLASS_C )
     {
@@ -683,7 +676,7 @@ static void OnRadioTxDone( void )
 
     // Update Aggregated last tx done time
     AggregatedLastTxDoneTime = curTime;
-    printf("[LoRaMac.c] Radio tx done AggregatedLastTxDoneTime=%u\r\n", AggregatedLastTxDoneTime);
+    //printf("[LoRaMac.c] Radio tx done AggregatedLastTxDoneTime=%u\r\n", AggregatedLastTxDoneTime);
     if( NodeAckRequested == false )
     {
         McpsConfirm.Status = LORAMAC_EVENT_INFO_STATUS_OK;
@@ -717,13 +710,13 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
     PhyParam_t phyParam;
     bool skipIndication = false;
     int i = 0;
-    printf("################################### pkt %d\r\n", size);
+    //printf("################################### pkt %d\r\n", size);
 
-    for(i=0;i<size;i++){
-        printf("%02x ",payload[i]);
-    }
-    printf("\r\n");
-    printf("################################### pkt %d\r\n", size);
+    // for(i=0;i<size;i++){
+    //     printf("%02x ",payload[i]);
+    // }
+    //printf("\r\n");
+    //printf("################################### pkt %d\r\n", size);
     uint8_t pktHeaderLen = 0;
     uint32_t address = 0;
     uint8_t appPayloadStartIndex = 0;
@@ -763,7 +756,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
     TimerStop( &RxWindowTimer2 );
 
     macHdr.Value = payload[pktHeaderLen++];
-    printf("zzzz Downlink dtype is 0x%02x\r\n",macHdr.Bits.MType);
+    //printf("zzzz Downlink dtype is 0x%02x\r\n",macHdr.Bits.MType);
     switch( macHdr.Bits.MType )
     {
         case FRAME_TYPE_JOIN_ACCEPT:
@@ -851,8 +844,8 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
-                printf("zzzz localAddr=0x%08x, msgAddr=0x%08x\r\n",
-                    LoRaMacDevAddr,address);
+                //printf("zzzz localAddr=0x%08x, msgAddr=0x%08x\r\n",
+                    // LoRaMacDevAddr,address);
                 if( address != LoRaMacDevAddr )
                 {
                     curMulticastParams = MulticastChannels;
@@ -933,7 +926,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
 
                 if( isMicOk == true )
                 {
-                    printf("zzzz Downlink mic is ok\r\n");
+                    //printf("zzzz Downlink mic is ok\r\n");
                     McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_OK;
                     McpsIndication.Multicast = multicast;
                     McpsIndication.FramePending = fCtrl.Bits.FPending;
@@ -949,7 +942,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                     // Update 32 bits downlink counter
                     if( multicast == 1 )
                     {
-                        printf("zzzz Downlink is multicast\r\n");
+                        //printf("zzzz Downlink is multicast\r\n");
                         McpsIndication.McpsIndication = MCPS_MULTICAST;
 
                         if( ( curMulticastParams->DownLinkCounter == downLinkCounter ) &&
@@ -964,7 +957,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                     }
                     else
                     {
-                        printf("zzzz Downlink is not multicast\r\n");
+                        //printf("zzzz Downlink is not multicast\r\n");
                         if( macHdr.Bits.MType == FRAME_TYPE_DATA_CONFIRMED_DOWN )
                         {
                             SrvAckRequested = true;
@@ -996,8 +989,8 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                             }
                         }
                         DownLinkCounter = downLinkCounter;
-                        printf("zzzz Downlink DownLinkCounter is %d\r\n",
-                            DownLinkCounter);
+                        //printf("zzzz Downlink DownLinkCounter is %d\r\n",
+                            // DownLinkCounter);
                     }
 
                     // This must be done before parsing the payload and the MAC commands.
@@ -1050,7 +1043,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                             if( fCtrl.Bits.FOptsLen > 0 )
                             {
                                 // Decode Options field MAC commands. Omit the fPort.
-                                printf("zzzz Downlink FOptsLen is %d\r\n", fCtrl.Bits.FOptsLen);
+                                //printf("zzzz Downlink FOptsLen is %d\r\n", fCtrl.Bits.FOptsLen);
                                 ProcessMacCommands( payload, 8, appPayloadStartIndex - 1, snr );
                             }
 
@@ -1078,7 +1071,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                             ProcessMacCommands( payload, 8, appPayloadStartIndex, snr );
                         }
                     }
-                    printf("zzzz Downlink skipIndication is %d\r\n", skipIndication);
+                    //printf("zzzz Downlink skipIndication is %d\r\n", skipIndication);
                     if( skipIndication == false )
                     {
                         // Check if the frame is an acknowledgement
@@ -1102,7 +1095,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                                 TimerStop( &AckTimeoutTimer );
                             }
                         }
-                        printf("zzzz Downlink McpsConfirm.AckReceived is %d\r\n", McpsConfirm.AckReceived);
+                        //printf("zzzz Downlink McpsConfirm.AckReceived is %d\r\n", McpsConfirm.AckReceived);
                     }
                     // Provide always an indication, skip the callback to the user application,
                     // in case of a confirmed downlink retransmission.
@@ -1112,7 +1105,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 else
                 {
                     McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_MIC_FAIL;
-                    printf("zzzz Downlink mic is error\r\n");
+                    //printf("zzzz Downlink mic is error\r\n");
                     PrepareRxDoneAbort( );
                     return;
                 }
@@ -1203,7 +1196,7 @@ static void OnRadioRxTimeout( void )
     {
         OnRxWindow2TimerEvent( );
     }
-printf(">>>>>>>>>> OnRadioRxTimeout\r\n");
+//printf(">>>>>>>>>> OnRadioRxTimeout\r\n");
     if( RxSlot == 0 )
     {
         if( NodeAckRequested == true )
@@ -1323,9 +1316,9 @@ static void OnMacStateCheckTimerEvent( void )
 
         if( LoRaMacFlags.Bits.McpsInd == 1 )
         {// Procedure if we received a frame
-            printf("zzzz Yes.We received a frame.McpsConfirm.AckReceived=%d, "
-                "AckTimeoutRetriesCounter:%d AckTimeoutRetries:%d\r\n",
-                McpsConfirm.AckReceived, AckTimeoutRetriesCounter, AckTimeoutRetries);
+            //printf("zzzz Yes.We received a frame.McpsConfirm.AckReceived=%d, "
+                // "AckTimeoutRetriesCounter:%d AckTimeoutRetries:%d\r\n",
+                // McpsConfirm.AckReceived, AckTimeoutRetriesCounter, AckTimeoutRetries);
             if( ( McpsConfirm.AckReceived == true ) || ( AckTimeoutRetriesCounter > AckTimeoutRetries ) )
             {
                 AckTimeoutRetry = false;
@@ -1394,7 +1387,7 @@ static void OnMacStateCheckTimerEvent( void )
             }
         }
     }
-    printf("zzzz LoRaMacState is 0x%d\r\n", LoRaMacState);
+    //printf("zzzz LoRaMacState is 0x%d\r\n", LoRaMacState);
     // Handle reception for Class B and Class C
     if( ( LoRaMacState & LORAMAC_RX ) == LORAMAC_RX )
     {
@@ -1432,17 +1425,17 @@ static void OnMacStateCheckTimerEvent( void )
         }
         if( LoRaMacFlags.Bits.McpsIndSkip == 0 )
         {
-            printf("zzzz Yeah,call user callback func !!!!!!!!!!!\r\n");
+            //printf("zzzz Yeah,call user callback func !!!!!!!!!!!\r\n");
             LoRaMacPrimitives->MacMcpsIndication( &McpsIndication );
         }
         LoRaMacFlags.Bits.McpsIndSkip = 0;
         LoRaMacFlags.Bits.McpsInd = 0;
     }
-     printf("[LoRaMac.c] MacStatusEvent ...JoinRequestTrials =%d, "
-         "MaxJoinRequestTrials=%d UpLinkCounter=%d LoRaMacState=%d "
-         "AckTimeoutRetriesCounter:%d AckTimeoutRetries:%d MAX_ACK_RETRIES:%d\r\n",
-         JoinRequestTrials, MaxJoinRequestTrials, UpLinkCounter, LoRaMacState,
-         AckTimeoutRetriesCounter, AckTimeoutRetries, MAX_ACK_RETRIES);
+     //printf("[LoRaMac.c] MacStatusEvent ...JoinRequestTrials =%d, "
+        //  "MaxJoinRequestTrials=%d UpLinkCounter=%d LoRaMacState=%d "
+        //  "AckTimeoutRetriesCounter:%d AckTimeoutRetries:%d MAX_ACK_RETRIES:%d\r\n",
+        //  JoinRequestTrials, MaxJoinRequestTrials, UpLinkCounter, LoRaMacState,
+        //  AckTimeoutRetriesCounter, AckTimeoutRetries, MAX_ACK_RETRIES);
 }
 
 static void OnTxDelayedTimerEvent( void )
@@ -1472,7 +1465,7 @@ static void OnTxDelayedTimerEvent( void )
          * LoRaMacDevNonce values to prevent reply attacks. */
         PrepareFrame( &macHdr, &fCtrl, 0, NULL, 0 );
     }
-    printf("[LoRaMac.c] ############## OnTxDelayedTimerEvent done, try to ScheduleTx\r\n");
+    //printf("[LoRaMac.c] ############## OnTxDelayedTimerEvent done, try to ScheduleTx\r\n");
     ScheduleTx( );
 }
 
@@ -1492,7 +1485,7 @@ static void OnRxWindow1TimerEvent( void )
     {
         Radio.Standby( );
     }
-    printf("RX1 chan:%d freq:%d \r\n",Channel, RxWindow1Config.Frequency);
+    //printf("RX1 chan:%d freq:%d \r\n",Channel, RxWindow1Config.Frequency);
     RegionRxConfig( LoRaMacRegion, &RxWindow1Config, ( int8_t* )&McpsIndication.RxDatarate );
     RxWindowSetup( RxWindow1Config.RxContinuous, LoRaMacParams.MaxRxWindow );
 }
@@ -1521,9 +1514,9 @@ static void OnRxWindow2TimerEvent( void )
         RxWindowSetup( RxWindow2Config.RxContinuous, LoRaMacParams.MaxRxWindow );
         RxSlot = RxWindow2Config.Window;
     }
-    printf("RX2 chan:%d freq:%d conti:%d window:%d\r\n",
-            Channel, RxWindow2Config.Frequency,
-            RxWindow2Config.RxContinuous, LoRaMacParams.MaxRxWindow);
+    //printf("RX2 chan:%d freq:%d conti:%d window:%d\r\n",
+            // Channel, RxWindow2Config.Frequency,
+            // RxWindow2Config.RxContinuous, LoRaMacParams.MaxRxWindow);
 }
 
 static void OnAckTimeoutTimerEvent( void )
@@ -1552,8 +1545,8 @@ static void RxWindowSetup( bool rxContinuous, uint32_t maxRxWindow )
         Radio.Rx( 0 ); // Continuous mode
     }
     //added by zhangly
-    printf("0x%02x: %02x\r\n", 0x33,SX1276Read(0x33));
-    printf("0x%02x: %02x\r\n", 0x3b,SX1276Read(0x3b));
+    //printf("0x%02x: %02x\r\n", 0x33,SX1276Read(0x33));
+    //printf("0x%02x: %02x\r\n", 0x3b,SX1276Read(0x3b));
 }
 
 static bool ValidatePayloadLength( uint8_t lenN, int8_t datarate, uint8_t fOptsLen )
@@ -1768,21 +1761,21 @@ static void ProcessMacCommands( uint8_t *payload, uint8_t macIndex, uint8_t comm
                     linkAdrReq.CurrentDatarate = LoRaMacParams.ChannelsDatarate;
                     linkAdrReq.CurrentTxPower = LoRaMacParams.ChannelsTxPower;
                     linkAdrReq.CurrentNbRep = LoRaMacParams.ChannelsNbRep;
-                    printf("[LoraMac.c] MacCMD:0x03 adrEnable:%d curDR:%d, curPower:%d\r\n",
-                        linkAdrReq.AdrEnabled,
-                        linkAdrReq.CurrentDatarate,
-                        linkAdrReq.CurrentTxPower);
+                    //printf("[LoraMac.c] MacCMD:0x03 adrEnable:%d curDR:%d, curPower:%d\r\n",
+                        // linkAdrReq.AdrEnabled,
+                        // linkAdrReq.CurrentDatarate,
+                        // linkAdrReq.CurrentTxPower);
                     // Process the ADR requests
                     status = RegionLinkAdrReq( LoRaMacRegion, &linkAdrReq, &linkAdrDatarate,
                                                &linkAdrTxPower, &linkAdrNbRep, &linkAdrNbBytesParsed );
-                    printf("[LoraMac.c] MacCMD:0x03 RegionLinkAdrReq return 0x%02x\r\n", status);
+                    //printf("[LoraMac.c] MacCMD:0x03 RegionLinkAdrReq return 0x%02x\r\n", status);
                     if( ( status & 0x07 ) == 0x07 )
                     {
                         LoRaMacParams.ChannelsDatarate = linkAdrDatarate;
                         LoRaMacParams.ChannelsTxPower = linkAdrTxPower;
                         LoRaMacParams.ChannelsNbRep = linkAdrNbRep;
-                        printf("[LoraMac.c] MacCMD:0x03 Device changes to DR:%d Power:%d\r\n",
-                            linkAdrDatarate, linkAdrTxPower);
+                        //printf("[LoraMac.c] MacCMD:0x03 Device changes to DR:%d Power:%d\r\n",
+                            // linkAdrDatarate, linkAdrTxPower);
                     }
 
                     // Add the answers to the buffer
@@ -1967,8 +1960,8 @@ static LoRaMacStatus_t ScheduleTx( void )
     {
         AggregatedTimeOff = 0;
     }
-    printf("[LoRaMac.c] ScheduleTx,LastTxChannel is %d MaxDCycle:%d\r\n",
-        LastTxChannel, MaxDCycle);
+    //printf("[LoRaMac.c] ScheduleTx,LastTxChannel is %d MaxDCycle:%d\r\n",
+        // LastTxChannel, MaxDCycle);
     // Update Backoff
     CalculateBackOff( LastTxChannel );
 
@@ -1986,7 +1979,7 @@ static LoRaMacStatus_t ScheduleTx( void )
         // Update datarate in the function parameters
         nextChan.Datarate = LoRaMacParams.ChannelsDatarate;
     }
-    printf("[LoRaMac.c] ScheduleTx,After RegionNextChannel Channel is %d\r\n", Channel);
+    //printf("[LoRaMac.c] ScheduleTx,After RegionNextChannel Channel is %d\r\n", Channel);
     // Compute Rx1 windows parameters
     RegionComputeRxWindowParameters( LoRaMacRegion,
                                      RegionApplyDrOffset( LoRaMacRegion, LoRaMacParams.DownlinkDwellTime, LoRaMacParams.ChannelsDatarate, LoRaMacParams.Rx1DrOffset ),
@@ -2014,7 +2007,7 @@ static LoRaMacStatus_t ScheduleTx( void )
         RxWindow1Delay = LoRaMacParams.ReceiveDelay1 + RxWindow1Config.WindowOffset;
         RxWindow2Delay = LoRaMacParams.ReceiveDelay2 + RxWindow2Config.WindowOffset;
     }
-    printf("[LoRaMac.c] ############# ScheduleTx,dutyCycleTimeOff is %u ms\r\n", dutyCycleTimeOff);
+    //printf("[LoRaMac.c] ############# ScheduleTx,dutyCycleTimeOff is %u ms\r\n", dutyCycleTimeOff);
     dutyCycleTimeOff = 0;//added by zhangly
     // Schedule transmission of frame
     if( dutyCycleTimeOff == 0 )
@@ -2129,16 +2122,16 @@ LoRaMacStatus_t PrepareFrame( LoRaMacHeader_t *macHdr, LoRaMacFrameCtrl_t *fCtrl
             LoRaMacBufferPktLen = pktHeaderLen;
 
             memcpyr( LoRaMacBuffer + LoRaMacBufferPktLen, LoRaMacAppEui, 8 );
-            for(j=0; j < 8; j++){
-                printf("%02x ", LoRaMacAppEui[j]);
-            }
-            printf("\r\n");
+            // for(j=0; j < 8; j++){
+            //     //printf("%02x ", LoRaMacAppEui[j]);
+            // }
+            //printf("\r\n");
             LoRaMacBufferPktLen += 8;
             memcpyr( LoRaMacBuffer + LoRaMacBufferPktLen, LoRaMacDevEui, 8 );
-            for(j=0; j < 8; j++){
-                printf("%02x ", LoRaMacDevEui[j]);
-            }
-            printf("\r\n");
+            // for(j=0; j < 8; j++){
+            //     //printf("%02x ", LoRaMacDevEui[j]);
+            // }
+            //printf("\r\n");
             LoRaMacBufferPktLen += 8;
 
             LoRaMacDevNonce = Radio.Random( );
@@ -2289,8 +2282,8 @@ LoRaMacStatus_t SendFrameOnChannel( uint8_t channel )
     txConfig.PktLen = LoRaMacBufferPktLen;
 
     RegionTxConfig( LoRaMacRegion, &txConfig, &txPower, &TxTimeOnAir );
-    DEBUG("[LoRaMac.c] SendFrameOnChannel after txConfig Channel:%d Datarate:%d, Txpower:%d, Eirp:%d, AnennaGaion:%d, PktLen:%d\r\n",
-            txConfig.Channel, txConfig.Datarate, txConfig.TxPower, txConfig.MaxEirp, txConfig.AntennaGain, txConfig.PktLen);
+    //DEBUG("[LoRaMac.c] SendFrameOnChannel after txConfig Channel:%d Datarate:%d, Txpower:%d, Eirp:%d, AnennaGaion:%d, PktLen:%d\r\n",
+    //        txConfig.Channel, txConfig.Datarate, txConfig.TxPower, txConfig.MaxEirp, txConfig.AntennaGain, txConfig.PktLen);
 
     MlmeConfirm.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
     McpsConfirm.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
@@ -2302,25 +2295,25 @@ LoRaMacStatus_t SendFrameOnChannel( uint8_t channel )
     MlmeConfirm.TxTimeOnAir = TxTimeOnAir;
 
     // Starts the MAC layer status check timer
-    DEBUG("[LoRaMac.c] SendFrameOnChannel start MacStateCheckTimer on %u ms begin\r\n", MAC_STATE_CHECK_TIMEOUT);
+    //DEBUG("[LoRaMac.c] SendFrameOnChannel start MacStateCheckTimer on %u ms begin\r\n", MAC_STATE_CHECK_TIMEOUT);
     TimerSetValue( &MacStateCheckTimer, MAC_STATE_CHECK_TIMEOUT );
     TimerStart( &MacStateCheckTimer );
-    DEBUG("[LoRaMac.c] SendFrameOnChannel start MacStateCheckTimer on %u ms done\r\n", MAC_STATE_CHECK_TIMEOUT);
+    //DEBUG("[LoRaMac.c] SendFrameOnChannel start MacStateCheckTimer on %u ms done\r\n", MAC_STATE_CHECK_TIMEOUT);
 
     if( IsLoRaMacNetworkJoined == false )
     {
         JoinRequestTrials++;
-        DEBUG("[LoRaMac.c] SendFrameOnChannel JoinRequestTrials %u\r\n", JoinRequestTrials);
+        //DEBUG("[LoRaMac.c] SendFrameOnChannel JoinRequestTrials %u\r\n", JoinRequestTrials);
     }
 
-    DEBUG("[LoRaMac.c] Send buffer(len:%d) CH:%d start\r\n", LoRaMacBufferPktLen, Channel);
+    //DEBUG("[LoRaMac.c] Send buffer(len:%d) CH:%d start\r\n", LoRaMacBufferPktLen, Channel);
     // Send now
     Radio.Send( LoRaMacBuffer, LoRaMacBufferPktLen );
-    for(i=0; i< LoRaMacBufferPktLen; i++){
-        printf("%02x ", LoRaMacBuffer[i] & 0xFF);
-    }
-    printf("\r\n");
-    DEBUG("[LoRaMac.c] Send buffer(len:%d) CH:%d done\r\n", LoRaMacBufferPktLen, Channel);
+    // for(i=0; i< LoRaMacBufferPktLen; i++){
+    //     printf("%02x ", LoRaMacBuffer[i] & 0xFF);
+    // }
+    //printf("\r\n");
+    //DEBUG("[LoRaMac.c] Send buffer(len:%d) CH:%d done\r\n", LoRaMacBufferPktLen, Channel);
 
     LoRaMacState |= LORAMAC_TX_RUNNING;
 
@@ -2510,7 +2503,7 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t *primitives, LoRaMacC
 #if REMOVED_BY_LEYIZHANG
     //please remove by zhangly
     while(1){
-        printf("Start to recv\r\n");
+        //printf("Start to recv\r\n");
         OnRxWindow2TimerEvent( );
         Delay(5);
     }
@@ -3302,7 +3295,7 @@ LoRaMacStatus_t LoRaMacMcpsRequest( McpsReq_t *mcpsRequest )
     uint16_t fBufferSize;
     int8_t datarate;
     bool readyToSend = false;
-    printf("[LoraMac.c] LoRaMacMcpRequest LoRaMacState=%d\r\n", LoRaMacState);
+    //printf("[LoraMac.c] LoRaMacMcpRequest LoRaMacState=%d\r\n", LoRaMacState);
     if( mcpsRequest == NULL )
     {
         return LORAMAC_STATUS_PARAMETER_INVALID;
@@ -3368,7 +3361,7 @@ LoRaMacStatus_t LoRaMacMcpsRequest( McpsReq_t *mcpsRequest )
     // Apply the minimum possible datarate.
     // Some regions have limitations for the minimum datarate.
     datarate = MAX( datarate, phyParam.Value );
-//    printf("Max datarate is %d\r\n", datarate);
+//    //printf("Max datarate is %d\r\n", datarate);
     if( readyToSend == true )
     {
         if( AdrCtrlOn == false )
@@ -3385,7 +3378,7 @@ LoRaMacStatus_t LoRaMacMcpsRequest( McpsReq_t *mcpsRequest )
                 return LORAMAC_STATUS_PARAMETER_INVALID;
             }
         }
-        printf("Before Send loraMac buffer DR=%d\r\n", datarate);
+        //printf("Before Send loraMac buffer DR=%d\r\n", datarate);
         status = Send( &macHdr, fPort, fBuffer, fBufferSize );
         if( status == LORAMAC_STATUS_OK )
         {

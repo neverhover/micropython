@@ -35,13 +35,27 @@ void GpioMcuInit( Gpio_t *obj, PinNames pin, PinModes mode, PinConfigs config, P
 void GpioMcuSetInterrupt( Gpio_t *obj, IrqModes irqMode, IrqPriorities irqPriority, GpioIrqHandler *irqHandler )
 {
     gpio_intr_disable(obj->port);
-
+    // gpio_pad_select_gpio(obj->port);
+    // // configure mode
+    // // configure pull
+    // gpio_config_t gpioConfig;
+    // gpioConfig.pin_bit_mask = 1 << obj->port;
+    // gpioConfig.mode = obj->port.mode;
+    // gpioConfig.pull_up_en = (obj->port.pull  == PIN_PULL_UP) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+    // gpioConfig.pull_down_en = (obj->port.pull == PIN_PULL_DOWN) ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE;
+    // gpioConfig.intr_type = GPIO_INTR_DISABLE;
+    // gpio_config(&gpioConfig);
+    gpio_set_intr_type(obj->port, irqMode);
+    // obj->port.handler = (void *)irqHandler;
+    // obj->port.handler_arg = NULL;
+    gpio_isr_handler_add(obj->port, (void *)irqHandler, NULL);
     gpio_intr_enable(obj->port);
 }
 
 void GpioMcuRemoveInterrupt( Gpio_t *obj )
 {
 	gpio_intr_disable(obj->port);
+    gpio_isr_handler_remove(obj->port);
 }
 
 void GpioMcuWrite( Gpio_t *obj, uint32_t value )

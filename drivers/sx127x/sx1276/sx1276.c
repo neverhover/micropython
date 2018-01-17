@@ -256,10 +256,6 @@ void SX1276SetChannel( uint32_t freq )
     SX1276Write( REG_FRFMSB, ( uint8_t )( ( freq >> 16 ) & 0xFF ) );
     SX1276Write( REG_FRFMID, ( uint8_t )( ( freq >> 8 ) & 0xFF ) );
     SX1276Write( REG_FRFLSB, ( uint8_t )( freq & 0xFF ) );
-    // printf("[Init] Channel Set:%d, msb:%d, mid:%d, lsb:%d\r\n",
-    //     freq, ( uint8_t )( ( freq >> 16 ) & 0xFF ),
-    //     ( uint8_t )( ( freq >> 8 ) & 0xFF ) ,
-    //     ( uint8_t )( freq & 0xFF ));
 }
 
 bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
@@ -444,11 +440,6 @@ void SX1276SetRxConfig( RadioModems_t modem, uint32_t bandwidth,
         break;
     case MODEM_LORA:
         {
-            if( bandwidth > 2 )
-            {
-                // Fatal error: When using LoRa modem only bandwidths 125, 250 and 500 kHz are supported
-                while( 1 );
-            }
             bandwidth += 7;
             SX1276.Settings.LoRa.Bandwidth = bandwidth;
             SX1276.Settings.LoRa.Datarate = datarate;
@@ -774,8 +765,8 @@ uint32_t SX1276GetTimeOnAir( RadioModems_t modem, uint8_t pktLen )
 void SX1276Send( uint8_t *buffer, uint8_t size )
 {
     uint32_t txTimeout = 0;
-    uint32_t i = 0;
-#if REMOVED_BY_LEYIZHANG
+#if 0
+	uint32_t i = 0;
     for(i=0; i < 128;i++){
         printf("0x%02x: %02x\r\n", i,SX1276Read(i));
     }
@@ -910,8 +901,6 @@ void SX1276SetRx( uint32_t timeout )
         break;
     case MODEM_LORA:
         {
-            //Added by LeyiZhang
-            //SX1276SetOpMode( RF_OPMODE_STANDBY );
             if( SX1276.Settings.LoRa.IqInverted == true )
             {
                 SX1276Write( REG_LR_INVERTIQ, ( ( SX1276Read( REG_LR_INVERTIQ ) & RFLR_INVERTIQ_TX_MASK & RFLR_INVERTIQ_RX_MASK ) | RFLR_INVERTIQ_RX_ON | RFLR_INVERTIQ_TX_OFF ) );
@@ -1706,7 +1695,7 @@ void SX1276OnDio2Irq( void )
             {
             case MODEM_FSK:
                 // Checks if DIO4 is connected. If it is not PreambleDetected is set to true.
-                if( SX1276.DIO4.port == NULL )
+                if( SX1276.DIO4.port == 0 )
                 {
                     SX1276.Settings.FskPacketHandler.PreambleDetected = true;
                 }

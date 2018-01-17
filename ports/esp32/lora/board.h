@@ -31,6 +31,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 #include "sx1276-board.h"
 #include "mpconfigport.h"
 #include "driver/gpio.h"
+#include "LoRaMac.h"
 
 #define REMOVED_BY_LEYIZHANG 0
 /*!

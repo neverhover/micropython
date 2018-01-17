@@ -21,8 +21,8 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include <stdint.h>
 #include "utilities.h"
 
-#include "lora/system/crypto/aes.h"
-#include "lora/system/crypto/cmac.h"
+#include "lora/system/lora_crypto/aes.h"
+#include "lora/system/lora_crypto/cmac.h"
 
 #include "LoRaMacCrypto.h"
 

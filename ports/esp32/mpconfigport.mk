@@ -45,6 +45,9 @@ APP_LORA_LIB_SRC += $(addprefix $(TOP)/lib/lora/, \
 	system/lora_crypto/aes.c \
 	system/lora_crypto/cmac.c \
 	)
+APP_LORA_MOD_SRC += $(addprefix $(TOP)/ports/esp32/, \
+	modlora.c \
+	)
 endif
 
 # APP_OBJ
@@ -53,5 +56,6 @@ APP_OBJ += $(addprefix $(BUILD)/, \
 	$(APP_LORA_LIB_SRC:.c=.o) \
 	$(APP_RADIO_SRC:.c=.o) \
 	$(APP_LORA_SRC:.c=.o) \
+	$(APP_LORA_MOD_SRC:.c=.o) \
 	)
 endif
