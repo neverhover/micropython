@@ -50,7 +50,7 @@ Maintainer: Miguel Luis and Gregory Cristian
  * Board MCU pins definitions
  */
 
-#define RADIO_RESET                                 MICROPY_HW_SPI1_NSS
+#define RADIO_RESET                                 MICROPY_HW_SPI1_RESET
 
 #define RADIO_MOSI                                  MICROPY_HW_SPI1_MOSI
 #define RADIO_MISO                                  MICROPY_HW_SPI1_MISO

@@ -403,4 +403,7 @@ void SX1276SetMaxPayloadLength( RadioModems_t modem, uint8_t max );
  */
 void SX1276SetPublicNetwork( bool enable );
 
+
+void SX1276OnDio0Irq_blood( void *params);
+
 #endif // __SX1276_H__

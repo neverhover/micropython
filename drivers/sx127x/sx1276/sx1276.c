@@ -1179,6 +1179,7 @@ int16_t SX1276ReadRssi( RadioModems_t modem )
 void SX1276Reset( void )
 {
     // Set RESET pin to 0
+    SX1276.Reset.port = RADIO_RESET;
     GpioInit( &SX1276.Reset, RADIO_RESET, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
 
     // Wait 1 ms
@@ -1408,10 +1409,146 @@ void SX1276OnTimeoutIrq( void )
     }
 }
 
+
+void SX1276OnDio0Irq_blood( void *params)
+{
+    volatile uint8_t irqFlags = 0;
+    static uint8_t led=1;
+//    printf("SX1276 state:%d\r\n", SX1276.Settings.State);
+    Gpio_t obj;
+    obj.port = 25;
+    
+    if(led == 1){
+        GpioWrite(&obj, 0);
+        led = 0;
+    }else{
+        GpioWrite(&obj, 1);
+        led = 1;
+    }
+    switch( SX1276.Settings.State )
+    {
+        case RF_RX_RUNNING:
+            //TimerStop( &RxTimeoutTimer );
+            // RxDone interrupt
+            switch( SX1276.Settings.Modem )
+            {
+            case MODEM_FSK:
+                
+                break;
+            case MODEM_LORA:
+                {
+                    int8_t snr = 0;
+
+                    // Clear Irq
+                    SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_RXDONE );
+
+                    irqFlags = SX1276Read( REG_LR_IRQFLAGS );
+                    if( ( irqFlags & RFLR_IRQFLAGS_PAYLOADCRCERROR_MASK ) == RFLR_IRQFLAGS_PAYLOADCRCERROR )
+                    {
+                        // Clear Irq
+                        SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_PAYLOADCRCERROR );
+
+                        if( SX1276.Settings.LoRa.RxContinuous == false )
+                        {
+                            SX1276.Settings.State = RF_IDLE;
+                        }
+                        // TimerStop( &RxTimeoutTimer );
+
+                        if( ( RadioEvents != NULL ) && ( RadioEvents->RxError != NULL ) )
+                        {
+                            RadioEvents->RxError( );
+                        }
+                        break;
+                    }
+
+                    SX1276.Settings.LoRaPacketHandler.SnrValue = SX1276Read( REG_LR_PKTSNRVALUE );
+                    if( SX1276.Settings.LoRaPacketHandler.SnrValue & 0x80 ) // The SNR sign bit is 1
+                    {
+                        // Invert and divide by 4
+                        snr = ( ( ~SX1276.Settings.LoRaPacketHandler.SnrValue + 1 ) & 0xFF ) >> 2;
+                        snr = -snr;
+                    }
+                    else
+                    {
+                        // Divide by 4
+                        snr = ( SX1276.Settings.LoRaPacketHandler.SnrValue & 0xFF ) >> 2;
+                    }
+
+                    int16_t rssi = SX1276Read( REG_LR_PKTRSSIVALUE );
+                    if( snr < 0 )
+                    {
+                        if( SX1276.Settings.Channel > RF_MID_BAND_THRESH )
+                        {
+                            SX1276.Settings.LoRaPacketHandler.RssiValue = RSSI_OFFSET_HF + rssi + ( rssi >> 4 ) +
+                                                                          snr;
+                        }
+                        else
+                        {
+                            SX1276.Settings.LoRaPacketHandler.RssiValue = RSSI_OFFSET_LF + rssi + ( rssi >> 4 ) +
+                                                                          snr;
+                        }
+                    }
+                    else
+                    {
+                        if( SX1276.Settings.Channel > RF_MID_BAND_THRESH )
+                        {
+                            SX1276.Settings.LoRaPacketHandler.RssiValue = RSSI_OFFSET_HF + rssi + ( rssi >> 4 );
+                        }
+                        else
+                        {
+                            SX1276.Settings.LoRaPacketHandler.RssiValue = RSSI_OFFSET_LF + rssi + ( rssi >> 4 );
+                        }
+                    }
+
+                    SX1276.Settings.LoRaPacketHandler.Size = SX1276Read( REG_LR_RXNBBYTES );
+                    SX1276Write( REG_LR_FIFOADDRPTR, SX1276Read( REG_LR_FIFORXCURRENTADDR ) );
+                    SX1276ReadFifo( RxTxBuffer, SX1276.Settings.LoRaPacketHandler.Size );
+
+                    if( SX1276.Settings.LoRa.RxContinuous == false )
+                    {
+                        SX1276.Settings.State = RF_IDLE;
+                    }
+                    // TimerStop( &RxTimeoutTimer );
+
+                    if( ( RadioEvents != NULL ) && ( RadioEvents->RxDone != NULL ) )
+                    {
+                        RadioEvents->RxDone( RxTxBuffer, SX1276.Settings.LoRaPacketHandler.Size, SX1276.Settings.LoRaPacketHandler.RssiValue, SX1276.Settings.LoRaPacketHandler.SnrValue );
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case RF_TX_RUNNING:
+            // TimerStop( &TxTimeoutTimer );
+            // TxDone interrupt
+            switch( SX1276.Settings.Modem )
+            {
+            case MODEM_LORA:
+                // Clear Irq
+                SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_TXDONE );
+                // Intentional fall through
+            case MODEM_FSK:
+            default:
+                SX1276.Settings.State = RF_IDLE;
+                if( ( RadioEvents != NULL ) && ( RadioEvents->TxDone != NULL ) )
+                {
+                    RadioEvents->TxDone( );
+                }
+                break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 void SX1276OnDio0Irq( void )
 {
     volatile uint8_t irqFlags = 0;
-//    printf("SX1276 state:%d\r\n", SX1276.Settings.State);
+   
+    
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:

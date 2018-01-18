@@ -3,7 +3,14 @@
 * 
 */
 #include "modlora.h"
+#include "modmachine.h"
+#include "driver/gpio.h"
 
+#include "py/runtime.h"
+#include "py/mphal.h"
+#include "modmachine.h"
+#include "extmod/virtpin.h"
+#include "sx1276.h"
 
 /******************************************************************************
  DECLARE PRIVATE DATA
@@ -162,7 +169,21 @@ void OnRxTimeout( void );
  */
 void OnRxError( void );
 
+static IRAM_ATTR void irq_dio0(void *param){
+    // printf("Interrupt irq_dio0\n");
+    uint32_t atomic_state = MICROPY_BEGIN_ATOMIC_SECTION();
+    Gpio_t obj;
+    obj.port = 25;
+    GpioWrite(&obj, 0);
+    MICROPY_END_ATOMIC_SECTION(atomic_state);
+}
+
 static void  lora_private_process(){
+
+
+    
+
+
     RadioEvents.TxDone = OnTxDone;
     RadioEvents.RxDone = OnRxDone;
     RadioEvents.TxTimeout = OnTxTimeout;
@@ -188,7 +209,7 @@ void OnTxDone( void )
 {
     sendSucc+=1;
     Radio.Sleep( );
-    printf("\n[Radio FSM] Event: OnTxDone, State : %s -> %s \n", Device_state(State), Device_state(TX));
+    // printf("\n[Radio FSM] Event: OnTxDone, State : %s -> %s \n", Device_state(State), Device_state(TX));
     State = TX;
 }
 
@@ -200,12 +221,12 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
     memcpy( Recv_buffer.val, payload, size );
     RssiValue = rssi;
     SnrValue = snr;
-    printf("\n[Radio FSM] Event: OnRxDone, State : %s -> %s , size:%d, seq:%d rssi:%d snr:%d\n",
-        Device_state(State), Device_state(RX), size,Recv_buffer.data.head.seq, RssiValue, SnrValue);
-    for(i=0; i< size; i++){
-        printf("%02x ", payload[i]&0xff);
-    }
-    printf("\n");
+    // printf("\n[Radio FSM] Event: OnRxDone, State : %s -> %s , size:%d, seq:%d rssi:%d snr:%d\n",
+    //     Device_state(State), Device_state(RX), size,Recv_buffer.data.head.seq, RssiValue, SnrValue);
+    // for(i=0; i< size; i++){
+    //     printf("%02x ", payload[i]&0xff);
+    // }
+    // printf("\n");
 
     State = RX;
 }
@@ -214,7 +235,7 @@ void OnTxTimeout( void )
 {
     sendError+=1;
     Radio.Sleep( );
-    printf("\n[Radio FSM] Event: OnTxTimeout\n");
+    // printf("\n[Radio FSM] Event: OnTxTimeout\n");
     State = TX_TIMEOUT;
 }
 
@@ -230,7 +251,7 @@ void OnRxError( void )
 {
     recvError+=1;
     Radio.Sleep( );
-    printf("\r\n[Radio FSM] Event: OnRxError, State : %s -> %s \r\n", Device_state(State), Device_state(RX_ERROR));
+    // printf("\r\n[Radio FSM] Event: OnRxError, State : %s -> %s \r\n", Device_state(State), Device_state(RX_ERROR));
     State = RX_ERROR;
 }
 
@@ -265,9 +286,9 @@ static void TASK_LoRa (void *parms) {
     State = LOWPOWER;
 #endif
     for ( ; ; ) {
-        vTaskDelay (1000 / portTICK_PERIOD_MS);
-        Radio.Send(Send_buffer.val, BUFFER_SIZE);
-        printf("Send a packet. State = %s\n", Device_state(State));
+        vTaskDelay (2000 / portTICK_PERIOD_MS);
+        // Radio.Send(Send_buffer.val, BUFFER_SIZE);
+        // printf("Send a packet. State = %s\n", Device_state(State));
         switch( State )
         {
           case RX:
@@ -343,6 +364,8 @@ static void TASK_LoRa (void *parms) {
     }
 }
 
+
+
 /******************************************************************************
  DEFINE PUBLIC FUNCTIONS
  ******************************************************************************/
@@ -360,6 +383,32 @@ void modlora_init0(void) {
     printf("Start to init mcu\n");
     BoardInitMcu();
     BoardInitPeriph();
+    machine_pins_init();
+    printf("xxxxxxxxxxxxxxxxxxxxxx\n");
+    Gpio_t led;
+    led.port = 25;
+    GpioInit( &led, 25, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
+
+    gpio_pad_select_gpio(26);
+    gpio_set_level(26, 0);
+    // configure mode
+    // configure pull
+    gpio_config_t gpioConfig;
+    gpioConfig.pin_bit_mask = 1 << 26;
+    gpioConfig.mode = PIN_INPUT;
+    gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    gpioConfig.intr_type = IRQ_RISING_EDGE;
+    gpio_config(&gpioConfig);
+
+    // gpio_set_intr_type(26, IRQ_RISING_EDGE);
+    // gpio_isr_handler_add(26, irq_dio0, (void*)"26");
+
+    gpio_isr_handler_remove(26);
+    gpio_set_intr_type(26, IRQ_RISING_EDGE);
+    gpio_isr_handler_add(26, SX1276OnDio0Irq_blood, (void*)26);
+
+    printf("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\n");
 
     xTaskCreatePinnedToCore(
         TASK_LoRa, "LoRa", 

@@ -17,8 +17,13 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 static GpioIrqHandler *GpioIrq[16];
 
+static IRAM_ATTR void irq_dio0(void *param){
+    printf("Interrupt irq_dio0\n");
+}
+
 void GpioMcuInit( Gpio_t *obj, PinNames pin, PinModes mode, PinConfigs config, PinTypes type, uint32_t value )
 {
+
     gpio_pad_select_gpio(obj->port);
     gpio_set_level(obj->port, value);
     // configure mode
@@ -34,8 +39,10 @@ void GpioMcuInit( Gpio_t *obj, PinNames pin, PinModes mode, PinConfigs config, P
 
 void GpioMcuSetInterrupt( Gpio_t *obj, IrqModes irqMode, IrqPriorities irqPriority, GpioIrqHandler *irqHandler )
 {
-    gpio_intr_disable(obj->port);
-    // gpio_pad_select_gpio(obj->port);
+    // gpio_install_isr_service(0);
+    printf("Set gpio:%d irq with mode %d\n", obj->port, irqMode);
+    // gpio_intr_disable(obj->port);
+    gpio_pad_select_gpio(obj->port);
     // // configure mode
     // // configure pull
     // gpio_config_t gpioConfig;
@@ -45,11 +52,10 @@ void GpioMcuSetInterrupt( Gpio_t *obj, IrqModes irqMode, IrqPriorities irqPriori
     // gpioConfig.pull_down_en = (obj->port.pull == PIN_PULL_DOWN) ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE;
     // gpioConfig.intr_type = GPIO_INTR_DISABLE;
     // gpio_config(&gpioConfig);
+    gpio_isr_handler_remove(obj->port);
     gpio_set_intr_type(obj->port, irqMode);
-    // obj->port.handler = (void *)irqHandler;
-    // obj->port.handler_arg = NULL;
-    gpio_isr_handler_add(obj->port, (void *)irqHandler, NULL);
-    gpio_intr_enable(obj->port);
+    gpio_isr_handler_add(obj->port, irq_dio0, (void*)obj->port);
+    // gpio_intr_enable(obj->port);
 }
 
 void GpioMcuRemoveInterrupt( Gpio_t *obj )
