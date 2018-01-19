@@ -862,7 +862,7 @@ void SX1276SetStby( void )
 void SX1276SetRx( uint32_t timeout )
 {
     bool rxContinuous = false;
-    uint32_t i = 0;
+    // uint32_t i = 0;
 
 
     switch( SX1276.Settings.Modem )
@@ -1032,7 +1032,7 @@ void SX1276SetRx( uint32_t timeout )
 
 void SX1276SetTx( uint32_t timeout )
 {
-    uint32_t i = 0;
+    // uint32_t i = 0;
     TimerSetValue( &TxTimeoutTimer, timeout );
 
     switch( SX1276.Settings.Modem )
@@ -1413,17 +1413,7 @@ void SX1276OnTimeoutIrq( void )
 void SX1276OnDio0Irq_blood( void *params)
 {
     volatile uint8_t irqFlags = 0;
-    static uint8_t led=1;
-    Gpio_t obj;
-    obj.port = 25;
-    
-    if(led == 1){
-        GpioWrite(&obj, 0);
-        led = 0;
-    }else{
-        GpioWrite(&obj, 1);
-        led = 1;
-    }
+   
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
@@ -1546,12 +1536,21 @@ void SX1276OnDio0Irq_blood( void *params)
 void SX1276OnDio0Irq( void )
 {
     volatile uint8_t irqFlags = 0;
-   
+    static uint8_t led=1;
+    Gpio_t obj;
+    obj.port = 25;
+
+    if(led == 1){
+        GpioWrite(&obj, 0);
+        led = 0;
+    }else{
+        GpioWrite(&obj, 1);
+        led = 1;
+    }
     
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
-            //TimerStop( &RxTimeoutTimer );
             // RxDone interrupt
             switch( SX1276.Settings.Modem )
             {

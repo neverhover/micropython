@@ -22,16 +22,17 @@ static uint8_t BatteryLevel = 255;
 
 void BoardInitPeriph( void )
 {
-
+    Gpio_t led;
+    led.port = 25;
+    GpioInit( &led, 25, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
 }
 
 void BoardInitMcu( void )
 {
     if( McuInitialized == false )
     {
-        printf("Spi init\n");
+        printf("Lora Spi init\n");
         SpiInit( &SX1276.Spi, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, RADIO_NSS );
-        printf("SX1276IoInit\n");
         SX1276IoInit( );
         TimerHwInit();
         printf("Lora version is 0x%x\n",SX1276Read(0x42));

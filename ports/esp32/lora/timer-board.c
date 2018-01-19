@@ -113,8 +113,8 @@ IRAM_ATTR void TimerHwStart (uint32_t val) {
     } else {
         TimeoutCntValue = TimerTickCounterContext + val;
     }
-    printf("TimerTickCounterContext:%d and val %d ,TimeoutCntValue is %d\n", 
-        TimerTickCounterContext, val, TimeoutCntValue);
+    // printf("TimerTickCounterContext:%d and val %d ,TimeoutCntValue is %d\n", 
+    //     TimerTickCounterContext, val, TimeoutCntValue);
     TimerEnabled = true;
     MICROPY_END_ATOMIC_SECTION(ilevel);
 }

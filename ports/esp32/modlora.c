@@ -169,19 +169,8 @@ void OnRxTimeout( void );
  */
 void OnRxError( void );
 
-static IRAM_ATTR void irq_dio0(void *param){
-    // printf("Interrupt irq_dio0\n");
-    uint32_t atomic_state = MICROPY_BEGIN_ATOMIC_SECTION();
-    Gpio_t obj;
-    obj.port = 25;
-    GpioWrite(&obj, 0);
-    MICROPY_END_ATOMIC_SECTION(atomic_state);
-}
 
 static void  lora_private_process(){
-
-
-    
 
 
     RadioEvents.TxDone = OnTxDone;
@@ -383,36 +372,11 @@ void modlora_init0(void) {
     printf("Start to init mcu\n");
     BoardInitMcu();
     BoardInitPeriph();
-    machine_pins_init();
-    printf("xxxxxxxxxxxxxxxxxxxxxx\n");
-    Gpio_t led;
-    led.port = 25;
-    GpioInit( &led, 25, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
-
-    gpio_pad_select_gpio(26);
-    gpio_set_level(26, 0);
-    // configure mode
-    // configure pull
-    gpio_config_t gpioConfig;
-    gpioConfig.pin_bit_mask = 1 << 26;
-    gpioConfig.mode = PIN_INPUT;
-    gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    gpioConfig.intr_type = IRQ_RISING_EDGE;
-    gpio_config(&gpioConfig);
-
-    // gpio_set_intr_type(26, IRQ_RISING_EDGE);
-    // gpio_isr_handler_add(26, irq_dio0, (void*)"26");
-
-    gpio_isr_handler_remove(26);
-    gpio_set_intr_type(26, IRQ_RISING_EDGE);
-    gpio_isr_handler_add(26, SX1276OnDio0Irq_blood, (void*)26);
-
-    printf("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\n");
+    
 
     xTaskCreatePinnedToCore(
         TASK_LoRa, "LoRa", 
         LORA_STACK_SIZE / sizeof(StackType_t), NULL, 
         LORA_TASK_PRIORITY, NULL, 0);
-    printf("xTaskCreatePinnedToCore done \n");
+    printf("modlora_init0 done \n");
 }
