@@ -86,6 +86,9 @@ static IRAM_ATTR void TimerCallback (void) {
 
 void TimerHwInit( void ) {
     uint32_t ilevel = MICROPY_BEGIN_ATOMIC_SECTION();
+    HAL_tick_user_cb = NULL;
+    TimerHandle_t hal_timer = xTimerCreate("HAL_Timer", 1 , pdTRUE, (void *) 0, HAL_TimerCallback);
+    xTimerStart (hal_timer, 0);
     HAL_set_tick_cb(TimerCallback);
     MICROPY_END_ATOMIC_SECTION(ilevel);
 }
@@ -110,6 +113,8 @@ IRAM_ATTR void TimerHwStart (uint32_t val) {
     } else {
         TimeoutCntValue = TimerTickCounterContext + val;
     }
+    printf("TimerTickCounterContext:%d and val %d ,TimeoutCntValue is %d\n", 
+        TimerTickCounterContext, val, TimeoutCntValue);
     TimerEnabled = true;
     MICROPY_END_ATOMIC_SECTION(ilevel);
 }

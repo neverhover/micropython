@@ -1414,7 +1414,6 @@ void SX1276OnDio0Irq_blood( void *params)
 {
     volatile uint8_t irqFlags = 0;
     static uint8_t led=1;
-//    printf("SX1276 state:%d\r\n", SX1276.Settings.State);
     Gpio_t obj;
     obj.port = 25;
     
@@ -1428,7 +1427,7 @@ void SX1276OnDio0Irq_blood( void *params)
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
-            //TimerStop( &RxTimeoutTimer );
+            TimerStop( &RxTimeoutTimer );
             // RxDone interrupt
             switch( SX1276.Settings.Modem )
             {
@@ -1452,7 +1451,7 @@ void SX1276OnDio0Irq_blood( void *params)
                         {
                             SX1276.Settings.State = RF_IDLE;
                         }
-                        // TimerStop( &RxTimeoutTimer );
+                        TimerStop( &RxTimeoutTimer );
 
                         if( ( RadioEvents != NULL ) && ( RadioEvents->RxError != NULL ) )
                         {
@@ -1508,7 +1507,7 @@ void SX1276OnDio0Irq_blood( void *params)
                     {
                         SX1276.Settings.State = RF_IDLE;
                     }
-                    // TimerStop( &RxTimeoutTimer );
+                    TimerStop( &RxTimeoutTimer );
 
                     if( ( RadioEvents != NULL ) && ( RadioEvents->RxDone != NULL ) )
                     {
@@ -1521,7 +1520,7 @@ void SX1276OnDio0Irq_blood( void *params)
             }
             break;
         case RF_TX_RUNNING:
-            // TimerStop( &TxTimeoutTimer );
+            TimerStop( &TxTimeoutTimer );
             // TxDone interrupt
             switch( SX1276.Settings.Modem )
             {
