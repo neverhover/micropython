@@ -25,10 +25,11 @@ APP_INC += -I$(TOP)/ports/esp32/boards/$(BOARD)
 
 # APP_SRC
 ifeq ($(LORA), 1)
-APP_RADIO_SRC += $(addprefix $(TOP)/drivers/sx127x/$(RADIO)/, \
+APP_RADIO_SRC += $(addprefix drivers/sx127x/$(RADIO)/, \
 	$(RADIO).c \
 	)
-APP_LORA_SRC += $(addprefix $(TOP)/ports/esp32/lora/, \
+	
+APP_LORA_SRC += $(addprefix ./lora/, \
 	utilities.c \
 	timer-board.c \
 	gpio-board.c \
@@ -36,7 +37,8 @@ APP_LORA_SRC += $(addprefix $(TOP)/ports/esp32/lora/, \
 	$(RADIO)-board.c \
 	board.c \
 	)
-APP_LORA_LIB_SRC += $(addprefix $(TOP)/lib/lora/, \
+
+APP_LORA_LIB_SRC += $(addprefix lib/lora/, \
 	mac/LoRaMac.c \
 	mac/LoRaMacCrypto.c \
 	system/delay.c \
@@ -45,9 +47,10 @@ APP_LORA_LIB_SRC += $(addprefix $(TOP)/lib/lora/, \
 	system/lora_crypto/aes.c \
 	system/lora_crypto/cmac.c \
 	)
-APP_LORA_MOD_SRC += $(addprefix $(TOP)/ports/esp32/, \
+
+APP_LORA_MOD_SRC +=  \
 	modlora.c \
-	)
+
 endif
 
 # APP_OBJ

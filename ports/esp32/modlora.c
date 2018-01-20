@@ -276,8 +276,7 @@ static void TASK_LoRa (void *parms) {
 #endif
     for ( ; ; ) {
         vTaskDelay (2000 / portTICK_PERIOD_MS);
-        // Radio.Send(Send_buffer.val, BUFFER_SIZE);
-        // printf("Send a packet. State = %s\n", Device_state(State));
+       
         switch( State )
         {
           case RX:
@@ -369,7 +368,7 @@ void modlora_init0(void) {
     printf("LoRaTask stack water mark: %d\n", 
         (unsigned int)uxTaskGetStackHighWaterMark((TaskHandle_t)xLoRaTaskHndl));
     // target board initialisation
-    printf("Start to init mcu\n");
+    printf("modlora_init0 init start\n");
     BoardInitMcu();
     BoardInitPeriph();
     
@@ -378,5 +377,5 @@ void modlora_init0(void) {
         TASK_LoRa, "LoRa", 
         LORA_STACK_SIZE / sizeof(StackType_t), NULL, 
         LORA_TASK_PRIORITY, NULL, 0);
-    printf("modlora_init0 done \n");
+    printf("modlora_init0 init done \n");
 }
