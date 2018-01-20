@@ -19,6 +19,10 @@
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 
+#if defined(LORA_MODE_PRIVATE)
+#include "tests/lora_ping_pong.h"
+
+#endif
 
 /******************************************************************************
  DEFINE CONSTANTS
@@ -138,4 +142,6 @@ typedef struct {
  DECLARE FUNCTIONS
  ******************************************************************************/
 extern void modlora_init0(void);
+
+
 #endif

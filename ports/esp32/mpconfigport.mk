@@ -28,7 +28,7 @@ ifeq ($(LORA), 1)
 APP_RADIO_SRC += $(addprefix drivers/sx127x/$(RADIO)/, \
 	$(RADIO).c \
 	)
-	
+
 APP_LORA_SRC += $(addprefix ./lora/, \
 	utilities.c \
 	timer-board.c \
@@ -48,6 +48,10 @@ APP_LORA_LIB_SRC += $(addprefix lib/lora/, \
 	system/lora_crypto/cmac.c \
 	)
 
+APP_LORA_TEST_SRC += $(addprefix ./tests/, \
+	lora_ping_pong.c \
+	)
+
 APP_LORA_MOD_SRC +=  \
 	modlora.c \
 
@@ -60,5 +64,6 @@ APP_OBJ += $(addprefix $(BUILD)/, \
 	$(APP_RADIO_SRC:.c=.o) \
 	$(APP_LORA_SRC:.c=.o) \
 	$(APP_LORA_MOD_SRC:.c=.o) \
+	$(APP_LORA_TEST_SRC:.c=.o) \
 	)
 endif
